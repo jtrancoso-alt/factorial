@@ -122,34 +122,7 @@ func (c *factorialClient) ClockIn(dryRun bool) {
 
 				}
 				if d.MinutesLeft == 495 {
-					entity.ClockIn = "09:00"
-					entity.ClockOut = "14:15"
-					entity.Date = date.Format("2006-01-02")
-					entity.LocationType = "work_from_home"
-					entity.Minutes = nil
-					entity.ReferenceDate = date.Format("2006-01-02")
-					entity.Source = "desktop"
-					entity.TimeSettingsBreakConfigurationId = nil
-					entity.Workable = true
-					body, _ = json.Marshal(entity)
-					resp, _ = c.Post(BaseUrl+"/attendance/shifts", "application/json;charset=UTF-8", bytes.NewBuffer(body))
-					if resp.StatusCode == 201 {
-						ok = true
-					}
-					entity.ClockIn = "15:00"
-					entity.ClockOut = "18:00"
-					entity.Date = date.Format("2006-01-02")
-					entity.LocationType = "work_from_home"
-					entity.Minutes = nil
-					entity.ReferenceDate = date.Format("2006-01-02")
-					entity.Source = "desktop"
-					entity.TimeSettingsBreakConfigurationId = nil
-					entity.Workable = true
-					body, _ = json.Marshal(entity)
-					resp, _ = c.Post(BaseUrl+"/attendance/shifts", "application/json;charset=UTF-8", bytes.NewBuffer(body))
-					if resp.StatusCode == 201 {
-						ok = true
-					}
+					ok = c.shiftWithBreak(entity, body, resp, date)
 				}
 			}
 			if ok {
@@ -162,6 +135,32 @@ func (c *factorialClient) ClockIn(dryRun bool) {
 		fmt.Print(message)
 	}
 	fmt.Println("done!")
+}
+
+func (c *factorialClient) shiftWithBreak(entity newShift, body []byte, resp *http.Response, date time.Time) (ok bool) {
+	var shiftIn breakShift
+	var shiftOut breakShiftOut
+	ok = false
+	shiftIn.LocationType = entity.LocationType
+	shiftIn.EmployeeId = entity.EmployeeId
+	shiftIn.Now = date.Format("2006-01-02") + "T09:00"
+	body, _ = json.Marshal(shiftIn)
+	resp, _ = c.Post(BaseUrl+"/api/v2/resources/attendance/shifts/clock_in", "application/json;charset=UTF-8", bytes.NewBuffer(body))
+	ok = resp.StatusCode == 200
+	shiftOut.EmployeeId = entity.EmployeeId
+	shiftOut.Now = date.Format("2006-01-02") + "T14:15"
+	body, _ = json.Marshal(shiftOut)
+	resp, _ = c.Post(BaseUrl+"/api/v2/resources/attendance/shifts/break_start", "application/json;charset=UTF-8", bytes.NewBuffer(body))
+	ok = resp.StatusCode == 200
+	shiftOut.Now = date.Format("2006-01-02") + "T15:00"
+	body, _ = json.Marshal(shiftOut)
+	resp, _ = c.Post(BaseUrl+"/api/v2/resources/attendance/shifts/break_end", "application/json;charset=UTF-8", bytes.NewBuffer(body))
+	ok = resp.StatusCode == 200
+	shiftOut.Now = date.Format("2006-01-02") + "T18:00"
+	body, _ = json.Marshal(shiftOut)
+	resp, _ = c.Post(BaseUrl+"/api/v2/resources/attendance/shifts/clock_out", "application/json;charset=UTF-8", bytes.NewBuffer(body))
+	ok = resp.StatusCode == 200
+	return ok
 }
 
 func (c *factorialClient) login(email, password string) error {
@@ -232,8 +231,6 @@ func (c *factorialClient) setPeriodId() error {
 	}
 	return err
 }
-
-const employeeId = 930867
 
 func (c *factorialClient) CheckHourCalendar(calendar []calendarDay) error {
 	//https: //api.factorialhr.com/attendance/periods?year=2024&month=7&employee_id=282471&start_on=2024-07-01&end_on=2024-07-31

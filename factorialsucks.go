@@ -40,7 +40,7 @@ func main() {
 				Aliases:     []string{"m"},
 				Usage:       "clock-in month `MM`",
 				DefaultText: "current month",
-				Value:       int(10),
+				Value:       10,
 			},
 			&cli.StringFlag{
 				Name:    "clock-in",

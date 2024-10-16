@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/cookiejar"
@@ -22,8 +21,6 @@ import (
 
 const BaseUrl = "https://api.factorialhr.com"
 
-type fun func() error
-
 func handleError(spinner *spinner.Spinner, err error) {
 	if err != nil {
 		spinner.Stop()
@@ -32,8 +29,8 @@ func handleError(spinner *spinner.Spinner, err error) {
 }
 
 func NewFactorialClient(email, password string, year, month int, in, out string, todayOnly, untilToday bool) *factorialClient {
-	spinner := spinner.New(spinner.CharSets[14], 60*time.Millisecond)
-	spinner.Start()
+	spin := spinner.New(spinner.CharSets[14], 60*time.Millisecond)
+	spin.Start()
 	c := new(factorialClient)
 	c.year = year
 	c.month = month
@@ -46,20 +43,20 @@ func NewFactorialClient(email, password string, year, month int, in, out string,
 	}
 	jar, _ := cookiejar.New(&options)
 	c.Client = http.Client{Jar: jar}
-	spinner.Suffix = " Logging in..."
-	handleError(spinner, c.login(email, password))
-	spinner.Suffix = " Getting periods data..."
-	handleError(spinner, c.setPeriodId())
-	spinner.Suffix = " Getting calendar data..."
-	handleError(spinner, c.setCalendar())
-	spinner.Suffix = " Getting shifts data..."
-	handleError(spinner, c.setShifts())
-	spinner.Stop()
+	spin.Suffix = " Logging in..."
+	handleError(spin, c.login(email, password))
+	spin.Suffix = " Getting periods data..."
+	handleError(spin, c.setPeriodId())
+	spin.Suffix = " Getting calendar data..."
+	handleError(spin, c.setCalendar())
+	spin.Suffix = " Getting shifts data..."
+	handleError(spin, c.setShifts())
+	spin.Stop()
 	return c
 }
 
 func (c *factorialClient) ClockIn(dryRun bool) {
-	spinner := spinner.New(spinner.CharSets[14], 60*time.Millisecond)
+	spin := spinner.New(spinner.CharSets[14], 60*time.Millisecond)
 	var t time.Time
 	var message string
 	var body []byte
@@ -75,11 +72,11 @@ func (c *factorialClient) ClockIn(dryRun bool) {
 	entity.Workable = true
 	entity.Source = "desktop"
 	for _, d := range c.calendar {
-		spinner.Restart()
-		spinner.Reverse()
+		spin.Restart()
+		spin.Reverse()
 		t = time.Date(c.year, time.Month(c.month), d.Day, 0, 0, 0, 0, time.UTC)
 		message = fmt.Sprintf("%s... ", t.Format("02 Jan"))
-		spinner.Prefix = message + " "
+		spin.Prefix = message + " "
 		clockedIn, clockedTimes := c.clockedIn(d.Day, entity)
 		if clockedIn {
 			message = fmt.Sprintf("%s ❌ Period overlap: %s\n", message, clockedTimes)
@@ -99,19 +96,19 @@ func (c *factorialClient) ClockIn(dryRun bool) {
 				entity.Day = d.Day
 				entity.LocationType = "work_from_home"
 				entity.Source = "desktop"
-				fecha, err := time.Parse("2006-01-02", d.Date)
+				date, err := time.Parse("2006-01-02", d.Date)
 				if err != nil {
-					fmt.Println("Error al convertir la cadena a fecha:", err)
+					fmt.Println("Error al convertir la cadena a date:", err)
 					return
 				}
 				if d.MinutesLeft == 420 {
-					//fecha.Weekday() == time.Weekday(5) || fecha.Month() == time.Month(7) {
+					//date.Weekday() == time.Weekday(5) || date.Month() == time.Month(7) {
 					entity.ClockIn = "08:00"
 					entity.ClockOut = "15:00"
-					entity.Date = fecha.Format("2006-01-02")
+					entity.Date = date.Format("2006-01-02")
 					entity.LocationType = "work_from_home"
 					entity.Minutes = nil
-					entity.ReferenceDate = fecha.Format("2006-01-02")
+					entity.ReferenceDate = date.Format("2006-01-02")
 					entity.Source = "desktop"
 					entity.TimeSettingsBreakConfigurationId = nil
 					entity.Workable = true
@@ -127,10 +124,10 @@ func (c *factorialClient) ClockIn(dryRun bool) {
 				if d.MinutesLeft == 495 {
 					entity.ClockIn = "09:00"
 					entity.ClockOut = "14:15"
-					entity.Date = fecha.Format("2006-01-02")
+					entity.Date = date.Format("2006-01-02")
 					entity.LocationType = "work_from_home"
 					entity.Minutes = nil
-					entity.ReferenceDate = fecha.Format("2006-01-02")
+					entity.ReferenceDate = date.Format("2006-01-02")
 					entity.Source = "desktop"
 					entity.TimeSettingsBreakConfigurationId = nil
 					entity.Workable = true
@@ -141,10 +138,10 @@ func (c *factorialClient) ClockIn(dryRun bool) {
 					}
 					entity.ClockIn = "15:00"
 					entity.ClockOut = "18:00"
-					entity.Date = fecha.Format("2006-01-02")
+					entity.Date = date.Format("2006-01-02")
 					entity.LocationType = "work_from_home"
 					entity.Minutes = nil
-					entity.ReferenceDate = fecha.Format("2006-01-02")
+					entity.ReferenceDate = date.Format("2006-01-02")
 					entity.Source = "desktop"
 					entity.TimeSettingsBreakConfigurationId = nil
 					entity.Workable = true
@@ -161,7 +158,7 @@ func (c *factorialClient) ClockIn(dryRun bool) {
 				message = fmt.Sprintf("%s ❌ Error when attempting to clock in\n", message)
 			}
 		}
-		spinner.Stop()
+		spin.Stop()
 		fmt.Print(message)
 	}
 	fmt.Println("done!")
@@ -169,16 +166,22 @@ func (c *factorialClient) ClockIn(dryRun bool) {
 
 func (c *factorialClient) login(email, password string) error {
 	getCSRFToken := func(resp *http.Response) string {
-		data, _ := ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
+		data, _ := io.ReadAll(resp.Body)
+		err := resp.Body.Close()
+		if err != nil {
+			return "Login error"
+		}
 		start := strings.Index(string(data), "<meta name=\"csrf-token\" content=\"") + 33
 		end := strings.Index(string(data)[start:], "\" />")
 		return string(data)[start : start+end]
 	}
 
 	getLoginError := func(resp *http.Response) string {
-		data, _ := ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
+		data, _ := io.ReadAll(resp.Body)
+		err := resp.Body.Close()
+		if err != nil {
+			return "Login error"
+		}
 		start := strings.Index(string(data), "<div class=\"flash flash--wrong\">") + 32
 		if start < 0 {
 			return ""
@@ -216,7 +219,10 @@ func (c *factorialClient) setPeriodId() error {
 	}
 	var periods []period
 	body, _ := io.ReadAll(resp.Body)
-	json.Unmarshal(body, &periods)
+	err = json.Unmarshal(body, &periods)
+	if err != nil {
+		return err
+	}
 	for _, p := range periods {
 		if p.Year == c.year && p.Month == c.month {
 			c.employeeId = p.EmployeeId
@@ -247,7 +253,10 @@ func (c *factorialClient) CheckHourCalendar(calendar []calendarDay) error {
 	defer resp.Body.Close()
 	var minutesLeft []Period
 	body, _ := io.ReadAll(resp.Body)
-	json.Unmarshal(body, &minutesLeft)
+	err := json.Unmarshal(body, &minutesLeft)
+	if err != nil {
+		return err
+	}
 	for i, _ := range c.calendar {
 		c.calendar[i].MinutesLeft = minutesLeft[0].EstimatedRegularMinutesDistribution[i]
 	}
@@ -267,11 +276,14 @@ func (c *factorialClient) setCalendar() error {
 	}
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
-	json.Unmarshal(body, &c.calendar)
+	err := json.Unmarshal(body, &c.calendar)
+	if err != nil {
+		return err
+	}
 	sort.Slice(c.calendar, func(i, j int) bool {
 		return c.calendar[i].Day < c.calendar[j].Day
 	})
-	err := c.CheckHourCalendar(c.calendar)
+	err = c.CheckHourCalendar(c.calendar)
 	if err != nil {
 		return err
 	}
@@ -292,7 +304,10 @@ func (c *factorialClient) setShifts() error {
 	}
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
-	json.Unmarshal(body, &c.shifts)
+	err := json.Unmarshal(body, &c.shifts)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

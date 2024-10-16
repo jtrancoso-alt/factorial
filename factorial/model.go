@@ -79,6 +79,7 @@ type newShift struct {
 	Source                           string      `json:"source"`
 	ReferenceDate                    string      `json:"reference_date"`
 }
+
 type shift struct {
 	Id           int64  `json:"id"`
 	PeriodId     int64  `json:"period_id"`
@@ -88,4 +89,15 @@ type shift struct {
 	Source       string `json:"desktop"`
 	ClockOut     string `json:"clock_out"`
 	Minutes      int64  `json:"minutes"`
+}
+
+type breakShift struct {
+	EmployeeId   int    `json:"employee_id"`
+	Now          string `json:"now"`
+	LocationType string `json:"location_type"`
+}
+
+type breakShiftOut struct {
+	EmployeeId int    `json:"employee_id"`
+	Now        string `json:"now"`
 }

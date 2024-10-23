@@ -1,7 +1,7 @@
 steps:
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
-    args: ['functions', 'deploy', 'factorialsucks', '--runtime', 'go120', '--trigger-http', '--region', 'europe-southwest1', '--allow-unauthenticated']
+    args: ['functions', 'deploy', 'factorialsucks', '--runtime', 'go121', '--trigger-http', '--region', 'europe-southwest1', '--allow-unauthenticated']
 options:
   logging: CLOUD_LOGGING_ONLY
 timeout: "600s"

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -68,7 +69,7 @@ func (c *factorialClient) ClockIn(dryRun bool) {
 	entity.ClockIn = c.clockIn
 	entity.ClockOut = c.clockOut
 	entity.Minutes = nil
-	entity.EmployeeId = 930867
+	entity.EmployeeId, _ = strconv.Atoi(os.Getenv("USERID"))
 	entity.Workable = true
 	entity.Source = "desktop"
 	for _, d := range c.calendar {
@@ -105,6 +106,8 @@ func (c *factorialClient) ClockIn(dryRun bool) {
 					//date.Weekday() == time.Weekday(5) || date.Month() == time.Month(7) {
 					entity.ClockIn = "08:00"
 					entity.ClockOut = "15:00"
+					c.clockIn = "08:00"
+					c.clockOut = "15:00"
 					entity.Date = date.Format("2006-01-02")
 					entity.LocationType = "work_from_home"
 					entity.Minutes = nil

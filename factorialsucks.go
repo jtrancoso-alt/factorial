@@ -33,14 +33,14 @@ func main() {
 				Aliases:     []string{"y"},
 				Usage:       "clock-in year `YYYY`",
 				DefaultText: "current year",
-				Value:       2024,
+				Value:       today.Year(),
 			},
 			&cli.IntFlag{
 				Name:        "month",
 				Aliases:     []string{"m"},
 				Usage:       "clock-in month `MM`",
 				DefaultText: "current month",
-				Value:       10,
+				Value:       int(today.Month()),
 			},
 			&cli.StringFlag{
 				Name:    "clock-in",
@@ -98,7 +98,7 @@ func factorialSucks(c *cli.Context) error {
 		month = int(today.Month())
 	} else {
 		year = c.Int("year")
-		month = c.Int("month")
+		month = int(today.Month())
 	}
 	clockIn := c.String("clock-in")
 	clockOut := c.String("clock-out")

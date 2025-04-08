@@ -236,7 +236,6 @@ func (c *factorialClient) setPeriodId() error {
 }
 
 func (c *factorialClient) CheckHourCalendar(calendar []calendarDay) error {
-	//https: //api.factorialhr.com/attendance/periods?year=2024&month=7&employee_id=282471&start_on=2024-07-01&end_on=2024-07-31
 	u, _ := url.Parse(BaseUrl + "/attendance/periods")
 	q := u.Query()
 	fmt.Print(c.calendar)

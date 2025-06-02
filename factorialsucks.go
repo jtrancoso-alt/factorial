@@ -1,10 +1,11 @@
 package main
 
 import (
-	_ "github.com/joho/godotenv/autoload"
 	"log"
 	"os"
 	"time"
+
+	_ "github.com/joho/godotenv/autoload"
 
 	"github.com/alejoar/factorialsucks/factorial"
 	"github.com/urfave/cli/v2"

@@ -31,7 +31,7 @@ const (
 func NewFactorialClient(email, password string, year, month int, in, out string, todayOnly, untilToday bool) *factorialClient {
 	spin := spinner.New(spinner.CharSets[14], 60*time.Millisecond)
 	spin.Start()
-	
+
 	c := &factorialClient{
 		year:       year,
 		month:      month,
@@ -57,7 +57,7 @@ func NewFactorialClient(email, password string, year, month int, in, out string,
 	handleError(spin, c.setCalendar())
 	spin.Suffix = " Getting shifts data..."
 	handleError(spin, c.setShifts())
-	
+
 	spin.Stop()
 	return c
 }
@@ -70,7 +70,7 @@ func (c *factorialClient) ClockIn(dryRun bool) {
 	for _, day := range c.calendar {
 		spin.Restart()
 		spin.Reverse()
-		
+
 		date := time.Date(c.year, time.Month(c.month), day.Day, 0, 0, 0, 0, time.UTC)
 		message := fmt.Sprintf("%s... ", date.Format("02 Jan"))
 		spin.Prefix = message + " "
@@ -132,7 +132,6 @@ func (c *factorialClient) shouldSkipDay(day calendarDay, date time.Time, now tim
 	return false, ""
 }
 
-
 // createShift creates a shift for the given day with appropriate times
 func (c *factorialClient) createShift(day calendarDay) newShift {
 	shift := newShift{
@@ -153,9 +152,9 @@ func (c *factorialClient) createShift(day calendarDay) newShift {
 	dayOfMonth := date.Day()
 
 	// Check if date is in summer schedule (July 1st to September 15th)
-	isSummerSchedule := (month == time.July) || 
-		(month == time.August) || 
-		(month == time.September && dayOfMonth <= 15)
+	isSummerSchedule := (month == time.July) ||
+		(month == time.August) ||
+		(month == time.September && dayOfMonth < 15)
 
 	// Use 7-hour schedule (8:00-15:00) for:
 	// 1. Fridays (MinutesLeft == FridayShiftMinutes)
@@ -187,9 +186,9 @@ func (c *factorialClient) addShift(shift newShift) bool {
 	dayOfMonth := date.Day()
 
 	// Check if date is in summer schedule (July 1st to September 15th)
-	isSummerSchedule := (month == time.July) || 
-		(month == time.August) || 
-		(month == time.September && dayOfMonth <= 15)
+	isSummerSchedule := (month == time.July) ||
+		(month == time.August) ||
+		(month == time.September && dayOfMonth < 15)
 
 	// For regular shifts (Monday-Thursday) and not in summer schedule, use breaks
 	if calendarDay.MinutesLeft == RegularShiftMinutes && !isSummerSchedule {
@@ -208,7 +207,7 @@ func (c *factorialClient) addShiftWithBreak(shift newShift, date time.Time) bool
 	shiftIn := breakShift{
 		EmployeeId:   shift.EmployeeId,
 		LocationType: shift.LocationType,
-		Now:          date.Format("2006-01-02") + "T09:00",
+		Now:          date.Format("2006-01-02") + "T08:45",
 	}
 	if !c.makeBreakRequest(shiftIn, "/clock_in") {
 		return false
@@ -217,7 +216,7 @@ func (c *factorialClient) addShiftWithBreak(shift newShift, date time.Time) bool
 	// Break start at 14:15
 	shiftOut := breakShiftOut{
 		EmployeeId: shift.EmployeeId,
-		Now:        date.Format("2006-01-02") + "T14:15",
+		Now:        date.Format("2006-01-02") + "T14:30",
 	}
 	if !c.makeBreakRequest(shiftOut, "/break_start") {
 		return false
@@ -230,7 +229,7 @@ func (c *factorialClient) addShiftWithBreak(shift newShift, date time.Time) bool
 	}
 
 	// Clock out at 18:00
-	shiftOut.Now = date.Format("2006-01-02") + "T18:00"
+	shiftOut.Now = date.Format("2006-01-02") + "T17:30"
 	return c.makeBreakRequest(shiftOut, "/clock_out")
 }
 

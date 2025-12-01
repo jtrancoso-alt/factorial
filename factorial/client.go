@@ -236,7 +236,7 @@ func (c *factorialClient) addShiftWithBreak(shift newShift, date time.Time) bool
 // makeBreakRequest makes a request to the break endpoints
 func (c *factorialClient) makeBreakRequest(data interface{}, endpoint string) bool {
 	body, _ := json.Marshal(data)
-	resp, _ := c.Post(BaseUrl+"/api/v2/resources/attendance/shifts"+endpoint, "application/json;charset=UTF-8", bytes.NewBuffer(body))
+	resp, _ := c.Post(BaseUrl+"/api/2025-10-01/resources/attendance/shifts"+endpoint, "application/json;charset=UTF-8", bytes.NewBuffer(body))
 	if resp.StatusCode != 200 {
 		fmt.Printf("Error in %s request: %d\n", endpoint, resp.StatusCode)
 		return false
